@@ -1,0 +1,11 @@
+/.devcontainer
+/__pycache__
+/bin
+/image.png
+/image.png:Zone.Identifier
+/image_path_v2
+/include
+/lib
+/pyvenv.cfg
+/share
+/lib64

@@ -106,7 +106,7 @@ def build_text_embedding(categories):
       all_text_embeddings = all_text_embeddings.cuda()
   return all_text_embeddings.cpu().numpy().T
 
-def vild(image_path, category_name_string, params=params):
+def vild(image_tensor, category_name_string, params=params):
   #################################################################
   # Preprocessing categories and get params
   category_names = [x.strip() for x in category_name_string.split(';')]
@@ -118,7 +118,6 @@ def vild(image_path, category_name_string, params=params):
 
   #################################################################
   # Obtain results and read image
-  image_tensor = tf.convert_to_tensor([image_path], dtype=tf.string)
   output = infer(input=image_tensor)
   roi_boxes, roi_scores, detection_boxes, scores_unused, box_outputs, detection_masks, visual_features, image_info = output['roi_boxes'].numpy(), output['roi_scores'].numpy(), output['2nd_stage_boxes'].numpy(), output['2nd_stage_scores_unused'].numpy(), output['box_outputs'].numpy(), output['mask_outputs'].numpy(), output['visual_feat_outputs'].numpy(), output['image_info'].numpy()
 
@@ -196,15 +195,16 @@ def vild(image_path, category_name_string, params=params):
 
 # test
 image_path = 'image.png' 
+image = tf.convert_to_tensor([image_path], dtype=tf.string)
 target = 'trash can'
 category_name_string = ';'.join([target])
 
 start = time.time()
-vild(image_path, category_name_string, params)
+vild(image, category_name_string, params)
 end = time.time()
 print("timec: ", end - start)
 
 start = time.time()
-vild(image_path, category_name_string, params)
+vild(image, category_name_string, params)
 end = time.time()
 print("timec: ", end - start)

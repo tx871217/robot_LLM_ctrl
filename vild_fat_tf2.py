@@ -1,4 +1,4 @@
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from matplotlib import pyplot as plt
 from PIL import Image
 import numpy as np 
@@ -37,9 +37,13 @@ plt.rc('legend', fontsize=MEDIUM_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 # load vild model
-session = tf.Session(graph=tf.Graph())
-saved_model_dir = './image_path_v2'
-_ = tf.saved_model.loader.load(session, ['serve'], saved_model_dir)
+model = tf.saved_model.load('./image_path_v2')
+# Get the model's signature
+infer = model.signatures['serving_default']
+
+# session = tf.Session(graph=tf.Graph())
+# saved_model_dir = './image_path_v2'
+# _ = tf.saved_model.loader.load(session, ['serve'], saved_model_dir)
 
 # helpfull functions
 numbered_categories = [{'name': str(idx), 'id': idx,} for idx in range(50)]
@@ -146,10 +150,17 @@ def vild(image_path, category_name_string, params):
 
   #################################################################
   # Obtain results and read image
-  roi_boxes, roi_scores, detection_boxes, scores_unused, box_outputs, detection_masks, visual_features, image_info = session.run(
-        ['RoiBoxes:0', 'RoiScores:0', '2ndStageBoxes:0', '2ndStageScoresUnused:0', 'BoxOutputs:0', 'MaskOutputs:0', 'VisualFeatOutputs:0', 'ImageInfo:0'],
-        feed_dict={'Placeholder:0': [image_path,]})
-        # feed_dict={tf.placeholder(tf.float32, shape=[None,None,None,3]): image_tensor})
+  # roi_boxes, roi_scores, detection_boxes, scores_unused, box_outputs, detection_masks, visual_features, image_info = session.run(
+  #       ['RoiBoxes:0', 'RoiScores:0', '2ndStageBoxes:0', '2ndStageScoresUnused:0', 'BoxOutputs:0', 'MaskOutputs:0', 'VisualFeatOutputs:0', 'ImageInfo:0'],
+  #       feed_dict={'Placeholder:0': [image_path,]})
+  #       # feed_dict={tf.placeholder(tf.float32, shape=[None,None,None,3]): image_tensor})
+
+  image_tensor = tf.convert_to_tensor([image_path], dtype=tf.string)
+  output = infer(input=image_tensor)
+
+
+  roi_boxes, roi_scores, detection_boxes, scores_unused, box_outputs, detection_masks, visual_features, image_info = output['roi_boxes'].numpy(), output['roi_scores'].numpy(), output['2nd_stage_boxes'].numpy(), output['2nd_stage_scores_unused'].numpy(), output['box_outputs'].numpy(), output['mask_outputs'].numpy(), output['visual_feat_outputs'].numpy(), output['image_info'].numpy()
+
 
   roi_boxes = np.squeeze(roi_boxes, axis=0)  # squeeze
   # no need to clip the boxes, already done
@@ -248,6 +259,8 @@ def vild(image_path, category_name_string, params):
     # plt.axis('off')
     plt.title('Detected objects and RPN scores')
     plt.show()
+    plt.savefig('out.png')
+
 
   #################################################################
   #  Print found_objects
